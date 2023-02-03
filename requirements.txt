@@ -3,3 +3,4 @@ pandas
 bs4
 numpy
 scikit-learn
+html5lib
