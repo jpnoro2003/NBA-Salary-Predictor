@@ -1,6 +1,4 @@
 streamlit
-pickle
 pandas
-requests
 bs4
 numpy
