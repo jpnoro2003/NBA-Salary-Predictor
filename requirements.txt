@@ -2,4 +2,4 @@ streamlit
 pandas
 bs4
 numpy
-sklearn
+scikit-learn
