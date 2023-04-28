@@ -8,17 +8,22 @@ import numpy as np
 
 # Fetch player search results from BasketballReference
 def search_results(Name):
+    
     formatted_url = "https://www.basketball-reference.com/search/search.fcgi?search=" + Name.replace(" ","%20")
     page = requests.get(formatted_url)
     soup = BeautifulSoup(page.content, 'html.parser')
     results = soup.find_all('div', class_="search-item-name")
     results_list = {"Name": [], "Link": []}
     
-    if len(results) == 0: # Redirects straight to player page
-        name = soup.find('div', id="div_faq").find_all('h3')[0].text.split()[2:-1]
+    # Redirects straight to player page
+    if len(results) == 0 and len(soup.find_all('div', id="info")) > 0:
+        print(1)
+        name = soup.find('div', id="info").find_all('span')[0].text.strip()
+        print(name)
         link = soup.find('div', id="bottom_nav_container").find_all('a')[0]
-        results_list = {"Name": [" ".join(name)], "Link": ["https://www.basketball-reference.com" + link['href']]}
+        results_list = {"Name": [name], "Link": ["https://www.basketball-reference.com" + link['href']]}
     else: # Search Page
+        print(2)
         for result in results:
             link = result.find('a')
             if link['href'][:8] == "/players":
@@ -26,11 +31,14 @@ def search_results(Name):
                 results_list['Link'].append("https://www.basketball-reference.com" + link['href'])
     return results_list
 
+
 # Get player's data from bball-ref page
 def get_player_data(link, year):
     
+    # Read tables from page
     player_data = pd.read_html(link, flavor="html5lib")
     
+    # Select data (if there are more than 6 tables, then the player has playoff experience - have to select different tables)
     if len(player_data) >= 6:
         base_data = player_data[0]
         adv_data = player_data[5]
@@ -38,9 +46,14 @@ def get_player_data(link, year):
         base_data = player_data[0]
         adv_data = player_data[3]
     
+    # Select Relevant year
     base_data = base_data[base_data['Season'] == year][:1]
     adv_data = adv_data[adv_data['Season'] == year][:1]
     
+    #print(adv_data)
+    #print(adv_data.columns)
+    
+    # Filter and merge tables, return final result
     adv_data = adv_data.drop(["Pos", "Age", "Tm", "G", "MP", "Unnamed: 19", "Unnamed: 24"], axis=1)
     final_data = pd.merge(base_data, adv_data, on='Season').fillna(0)[target_list]
     return final_data
